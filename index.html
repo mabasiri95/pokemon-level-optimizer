@@ -1,236 +1,519 @@
-import React, { useState } from 'react';
-import { ArrowUp, Zap, Coins } from 'lucide-react';
-
-const PokemonOptimizer = () => {
-  const [pokemon, setPokemon] = useState([
-    { id: 1, level: 34, pointsPerLevel: 65, name: 'Pokemon 1' },
-    { id: 2, level: 23, pointsPerLevel: 50, name: 'Pokemon 2' },
-    { id: 3, level: 30, pointsPerLevel: 60, name: 'Pokemon 3' },
-    { id: 4, level: 29, pointsPerLevel: 60, name: 'Pokemon 4' },
-    { id: 5, level: 1, pointsPerLevel: 60, name: 'Pokemon 5' }
-  ]);
-  const [targetPoints, setTargetPoints] = useState(10000);
-  const [result, setResult] = useState(null);
-
-  const calculateCurrentPoints = (pkmn) => {
-    return pkmn.reduce((sum, p) => sum + (p.level * p.pointsPerLevel), 0);
-  };
-
-  const calculateEfficiency = (level, pointsPerLevel) => {
-    return pointsPerLevel / level;
-  };
-
-  const optimizeLeveling = () => {
-    const pkmnCopy = pokemon.map(p => ({ ...p }));
-    let currentPoints = calculateCurrentPoints(pkmnCopy);
-    let totalCoins = 0;
-    const levelingSequence = [];
-
-    while (currentPoints < targetPoints) {
-      // Find Pokemon with best efficiency
-      let bestIdx = 0;
-      let bestEfficiency = calculateEfficiency(pkmnCopy[0].level, pkmnCopy[0].pointsPerLevel);
-
-      for (let i = 1; i < pkmnCopy.length; i++) {
-        const efficiency = calculateEfficiency(pkmnCopy[i].level, pkmnCopy[i].pointsPerLevel);
-        if (efficiency > bestEfficiency) {
-          bestEfficiency = efficiency;
-          bestIdx = i;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Level Optimizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
 
-      // Level up the best Pokemon
-      const selectedPokemon = pkmnCopy[bestIdx];
-      const costToLevel = selectedPokemon.level;
-      const pointsGained = selectedPokemon.pointsPerLevel;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
 
-      levelingSequence.push({
-        pokemon: selectedPokemon.name,
-        fromLevel: selectedPokemon.level,
-        toLevel: selectedPokemon.level + 1,
-        cost: costToLevel,
-        pointsGained: pointsGained,
-        efficiency: bestEfficiency.toFixed(3),
-        totalPoints: currentPoints + pointsGained,
-        totalCoins: totalCoins + costToLevel
-      });
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-      selectedPokemon.level += 1;
-      currentPoints += pointsGained;
-      totalCoins += costToLevel;
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
 
-      // Safety check to prevent infinite loop
-      if (levelingSequence.length > 10000) {
-        break;
-      }
-    }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
 
-    setResult({
-      finalLevels: pkmnCopy,
-      totalCoins,
-      finalPoints: currentPoints,
-      sequence: levelingSequence
-    });
-  };
+        h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-  const updatePokemon = (id, field, value) => {
-    setPokemon(pokemon.map(p => 
-      p.id === id ? { ...p, [field]: parseInt(value) || 0 } : p
-    ));
-    setResult(null);
-  };
+        .pokemon-list {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
 
-  const currentPoints = calculateCurrentPoints(pokemon);
+        .pokemon-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 150px 1fr 1fr 1fr 150px;
+            gap: 1rem;
+            align-items: center;
+        }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8 text-purple-900">
-          Pokemon Level Optimizer
-        </h1>
+        .pokemon-name {
+            font-weight: 600;
+            color: #333;
+        }
 
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <Zap className="text-yellow-500" />
-            Your Pokemon
-          </h2>
-          
-          <div className="grid gap-4 mb-6">
-            {pokemon.map((p) => (
-              <div key={p.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <span className="font-semibold">{p.name}</span>
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .input-group input {
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-weight: 600;
+        }
+
+        .control-group input {
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 150px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 10px;
+        }
+
+        .result-box.green {
+            background: #d4edda;
+        }
+
+        .result-box.blue {
+            background: #d1ecf1;
+        }
+
+        .result-box.purple {
+            background: #e7d4f5;
+        }
+
+        .result-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-box.green .result-number {
+            color: #28a745;
+        }
+
+        .result-box.blue .result-number {
+            color: #17a2b8;
+        }
+
+        .result-box.purple .result-number {
+            color: #764ba2;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .final-levels {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .level-change {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .level-points {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .more-steps {
+            text-align: center;
+            padding: 1rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .pokemon-item {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Pokemon Level Optimizer</h1>
+
+        <div class="card">
+            <h2>⚡ Your Pokemon</h2>
+            
+            <div class="pokemon-list" id="pokemonList"></div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Target Points:</label>
+                    <input type="number" id="targetPoints" value="10000" min="0">
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Level:</label>
-                  <input
-                    type="number"
-                    value={p.level}
-                    onChange={(e) => updatePokemon(p.id, 'level', e.target.value)}
-                    className="w-20 px-2 py-1 border rounded"
-                    min="1"
-                  />
+                <div class="control-group">
+                    <label>Current Points:</label>
+                    <strong id="currentPoints" style="color: #17a2b8;">0</strong>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Points/Level:</label>
-                  <input
-                    type="number"
-                    value={p.pointsPerLevel}
-                    onChange={(e) => updatePokemon(p.id, 'pointsPerLevel', e.target.value)}
-                    className="w-20 px-2 py-1 border rounded"
-                    min="1"
-                  />
+                <div class="control-group">
+                    <label>Points Needed:</label>
+                    <strong id="pointsNeeded" style="color: #dc3545;">0</strong>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Current: {p.level * p.pointsPerLevel} pts
-                </div>
-                <div className="text-sm font-semibold text-purple-600">
-                  Efficiency: {calculateEfficiency(p.level, p.pointsPerLevel).toFixed(3)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <label className="font-semibold">Target Points:</label>
-            <input
-              type="number"
-              value={targetPoints}
-              onChange={(e) => setTargetPoints(parseInt(e.target.value) || 0)}
-              className="w-32 px-3 py-2 border rounded"
-              min="0"
-            />
-            <div className="text-lg">
-              Current Points: <span className="font-bold text-blue-600">{currentPoints}</span>
             </div>
-            <div className="text-lg">
-              Points Needed: <span className="font-bold text-red-600">{Math.max(0, targetPoints - currentPoints)}</span>
-            </div>
-          </div>
 
-          <button
-            onClick={optimizeLeveling}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition"
-          >
-            <ArrowUp />
-            Calculate Optimal Leveling Strategy
-          </button>
+            <button class="btn" onclick="optimizeLeveling()">
+                🚀 Calculate Optimal Strategy
+            </button>
         </div>
 
-        {result && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <Coins className="text-yellow-500" />
-              Optimization Results
-            </h2>
+        <div id="resultsSection" class="hidden">
+            <div class="card">
+                <h2>💰 Results</h2>
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-green-600">{result.totalCoins}</div>
-                <div className="text-sm text-gray-600">Total Coins Needed</div>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-blue-600">{result.finalPoints}</div>
-                <div className="text-sm text-gray-600">Final Points</div>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-purple-600">{result.sequence.length}</div>
-                <div className="text-sm text-gray-600">Levels Gained</div>
-              </div>
-            </div>
-
-            <h3 className="text-xl font-semibold mb-3">Final Pokemon Levels</h3>
-            <div className="grid gap-2 mb-6">
-              {result.finalLevels.map((p) => (
-                <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <span className="font-semibold">{p.name}</span>
-                  <span>Level {pokemon.find(pk => pk.id === p.id).level} → {p.level}</span>
-                  <span className="text-blue-600 font-semibold">{p.level * p.pointsPerLevel} points</span>
+                <div class="results-grid">
+                    <div class="result-box green">
+                        <div class="result-number" id="totalCoins">0</div>
+                        <div class="result-label">Total Coins Needed</div>
+                    </div>
+                    <div class="result-box blue">
+                        <div class="result-number" id="finalPoints">0</div>
+                        <div class="result-label">Final Points</div>
+                    </div>
+                    <div class="result-box purple">
+                        <div class="result-number" id="levelsGained">0</div>
+                        <div class="result-label">Levels Gained</div>
+                    </div>
                 </div>
-              ))}
-            </div>
 
-            <h3 className="text-xl font-semibold mb-3">Leveling Sequence (First 20 steps)</h3>
-            <div className="max-h-96 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th className="p-2 text-left">Step</th>
-                    <th className="p-2 text-left">Pokemon</th>
-                    <th className="p-2 text-left">Level Up</th>
-                    <th className="p-2 text-right">Cost</th>
-                    <th className="p-2 text-right">Points Gained</th>
-                    <th className="p-2 text-right">Efficiency</th>
-                    <th className="p-2 text-right">Total Points</th>
-                    <th className="p-2 text-right">Total Coins</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.sequence.slice(0, 20).map((step, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="p-2">{idx + 1}</td>
-                      <td className="p-2">{step.pokemon}</td>
-                      <td className="p-2">{step.fromLevel} → {step.toLevel}</td>
-                      <td className="p-2 text-right">{step.cost}</td>
-                      <td className="p-2 text-right text-green-600">+{step.pointsGained}</td>
-                      <td className="p-2 text-right">{step.efficiency}</td>
-                      <td className="p-2 text-right font-semibold">{step.totalPoints}</td>
-                      <td className="p-2 text-right font-semibold">{step.totalCoins}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {result.sequence.length > 20 && (
-                <div className="text-center p-4 text-gray-500">
-                  ... and {result.sequence.length - 20} more steps
+                <h3 style="margin-bottom: 1rem; color: #333;">Final Pokemon Levels</h3>
+                <div class="final-levels" id="finalLevels"></div>
+
+                <h3 style="margin-bottom: 1rem; color: #333;">Leveling Sequence (First 20 Steps)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Step</th>
+                                <th>Pokemon</th>
+                                <th>Level Up</th>
+                                <th style="text-align: right;">Cost</th>
+                                <th style="text-align: right;">+Points</th>
+                                <th style="text-align: right;">Efficiency</th>
+                                <th style="text-align: right;">Total Points</th>
+                                <th style="text-align: right;">Total Coins</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sequenceTable"></tbody>
+                    </table>
                 </div>
-              )}
+                <div id="moreSteps" class="more-steps hidden"></div>
             </div>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
-  );
-};
 
-export default PokemonOptimizer;
+    <script>
+        const pokemon = [
+            { id: 1, level: 34, pointsPerLevel: 65, name: 'Pokemon 1' },
+            { id: 2, level: 23, pointsPerLevel: 50, name: 'Pokemon 2' },
+            { id: 3, level: 30, pointsPerLevel: 60, name: 'Pokemon 3' },
+            { id: 4, level: 29, pointsPerLevel: 60, name: 'Pokemon 4' },
+            { id: 5, level: 1, pointsPerLevel: 60, name: 'Pokemon 5' }
+        ];
+
+        function calculateCurrentPoints() {
+            return pokemon.reduce((sum, p) => sum + (p.level * p.pointsPerLevel), 0);
+        }
+
+        function calculateEfficiency(level, pointsPerLevel) {
+            return pointsPerLevel / level;
+        }
+
+        function updatePokemon(id, field, value) {
+            const p = pokemon.find(pk => pk.id === id);
+            if (p) {
+                p[field] = parseInt(value) || 1;
+                renderPokemonList();
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            const current = calculateCurrentPoints();
+            const target = parseInt(document.getElementById('targetPoints').value) || 0;
+            document.getElementById('currentPoints').textContent = current;
+            document.getElementById('pointsNeeded').textContent = Math.max(0, target - current);
+        }
+
+        function renderPokemonList() {
+            const container = document.getElementById('pokemonList');
+            container.innerHTML = pokemon.map(p => `
+                <div class="pokemon-item">
+                    <div class="pokemon-name">${p.name}</div>
+                    <div class="input-group">
+                        <label>Level</label>
+                        <input type="number" value="${p.level}" min="1" 
+                               onchange="updatePokemon(${p.id}, 'level', this.value)">
+                    </div>
+                    <div class="input-group">
+                        <label>Points/Level</label>
+                        <input type="number" value="${p.pointsPerLevel}" min="1" 
+                               onchange="updatePokemon(${p.id}, 'pointsPerLevel', this.value)">
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Current Points</span>
+                        <span class="stat-value">${p.level * p.pointsPerLevel}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Efficiency</span>
+                        <span class="stat-value">${calculateEfficiency(p.level, p.pointsPerLevel).toFixed(3)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function optimizeLeveling() {
+            const pkmnCopy = pokemon.map(p => ({ ...p }));
+            const targetPoints = parseInt(document.getElementById('targetPoints').value) || 0;
+            let currentPoints = calculateCurrentPoints();
+            let totalCoins = 0;
+            const levelingSequence = [];
+            const initialLevels = pokemon.map(p => p.level);
+
+            while (currentPoints < targetPoints) {
+                let bestIdx = 0;
+                let bestEfficiency = calculateEfficiency(pkmnCopy[0].level, pkmnCopy[0].pointsPerLevel);
+
+                for (let i = 1; i < pkmnCopy.length; i++) {
+                    const efficiency = calculateEfficiency(pkmnCopy[i].level, pkmnCopy[i].pointsPerLevel);
+                    if (efficiency > bestEfficiency) {
+                        bestEfficiency = efficiency;
+                        bestIdx = i;
+                    }
+                }
+
+                const selectedPokemon = pkmnCopy[bestIdx];
+                const costToLevel = selectedPokemon.level;
+                const pointsGained = selectedPokemon.pointsPerLevel;
+
+                levelingSequence.push({
+                    pokemon: selectedPokemon.name,
+                    fromLevel: selectedPokemon.level,
+                    toLevel: selectedPokemon.level + 1,
+                    cost: costToLevel,
+                    pointsGained: pointsGained,
+                    efficiency: bestEfficiency.toFixed(3),
+                    totalPoints: currentPoints + pointsGained,
+                    totalCoins: totalCoins + costToLevel
+                });
+
+                selectedPokemon.level += 1;
+                currentPoints += pointsGained;
+                totalCoins += costToLevel;
+
+                if (levelingSequence.length > 10000) break;
+            }
+
+            displayResults(pkmnCopy, totalCoins, currentPoints, levelingSequence, initialLevels);
+        }
+
+        function displayResults(finalLevels, totalCoins, finalPoints, sequence, initialLevels) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('totalCoins').textContent = totalCoins.toLocaleString();
+            document.getElementById('finalPoints').textContent = finalPoints.toLocaleString();
+            document.getElementById('levelsGained').textContent = sequence.length;
+
+            const finalLevelsHTML = finalLevels.map((p, idx) => `
+                <div class="level-item">
+                    <span class="pokemon-name">${p.name}</span>
+                    <span class="level-change">Level ${initialLevels[idx]} → ${p.level}</span>
+                    <span class="level-points">${p.level * p.pointsPerLevel} points</span>
+                </div>
+            `).join('');
+            document.getElementById('finalLevels').innerHTML = finalLevelsHTML;
+
+            const sequenceHTML = sequence.slice(0, 20).map((step, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>${step.pokemon}</td>
+                    <td>${step.fromLevel} → ${step.toLevel}</td>
+                    <td style="text-align: right;">${step.cost}</td>
+                    <td style="text-align: right; color: #28a745; font-weight: 600;">+${step.pointsGained}</td>
+                    <td style="text-align: right;">${step.efficiency}</td>
+                    <td style="text-align: right; font-weight: 600;">${step.totalPoints.toLocaleString()}</td>
+                    <td style="text-align: right; font-weight: 600;">${step.totalCoins.toLocaleString()}</td>
+                </tr>
+            `).join('');
+            document.getElementById('sequenceTable').innerHTML = sequenceHTML;
+
+            const moreStepsDiv = document.getElementById('moreSteps');
+            if (sequence.length > 20) {
+                moreStepsDiv.textContent = `... and ${sequence.length - 20} more steps`;
+                moreStepsDiv.classList.remove('hidden');
+            } else {
+                moreStepsDiv.classList.add('hidden');
+            }
+
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        document.getElementById('targetPoints').addEventListener('input', updateStats);
+
+        renderPokemonList();
+        updateStats();
+    </script>
+</body>
+</html>
