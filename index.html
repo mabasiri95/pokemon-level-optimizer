@@ -48,6 +48,22 @@
             gap: 0.5rem;
         }
 
+        p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        ul {
+            list-style-position: inside;
+            padding-left: 1.5rem;
+            color: #333;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
         .pokemon-list {
             display: grid;
             gap: 1rem;
@@ -294,6 +310,22 @@
 <body>
     <div class="container">
         <h1>🎮 Pokemon Level Optimizer</h1>
+
+        <div class="card">
+            <h2>Problem Statement</h2>
+            <p>You have multiple Pokemon, each with a current level, points earned per level, and a leveling cost system where leveling from level L to L+1 costs L coins. The goal is to reach a target point threshold (e.g., 10,000 points) while spending the minimum number of coins.</p>
+        </div>
+
+        <div class="card">
+            <h2>Features</h2>
+            <ul>
+                <li><strong>Dynamic Input:</strong> Customize Pokemon levels and point values</li>
+                <li><strong>Real-time Efficiency Calculation:</strong> See which Pokemon is most efficient at any moment</li>
+                <li><strong>Optimal Strategy:</strong> Calculates minimum coins needed</li>
+                <li><strong>Detailed Sequence:</strong> View step-by-step leveling decisions</li>
+                <li><strong>Visual Results:</strong> Clear display of costs and final states</li>
+            </ul>
+        </div>
 
         <div class="card">
             <h2>⚡ Your Pokemon</h2>
